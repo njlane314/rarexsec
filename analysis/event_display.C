@@ -140,8 +140,8 @@ static void run_event_display(bool use_semantic)
         : "evd_det_{plane}_run{run}_sub{sub}_evt{evt}";
 
     opt.cols.run = "run";
-    opt.cols.sub = "subrun";
-    opt.cols.evt = "event";
+    opt.cols.sub = "sub";
+    opt.cols.evt = "evt";
 
     opt.cols.det_u = "detector_image_u";
     opt.cols.det_v = "detector_image_v";
