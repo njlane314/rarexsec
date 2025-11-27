@@ -157,9 +157,9 @@ static void run_event_display(bool use_semantic)
     opt.display.canvas_size   = 900;
     opt.display.margin        = 0.10;
 
-    opt.display.det_threshold = 4.0f;
-    opt.display.det_min       = 1.0f;
-    opt.display.det_max       = 1000.0f;
+    opt.display.det_threshold = 0.0f;
+    opt.display.det_min       = 0.0f;
+    opt.display.det_max       = 10000.0f;
     opt.display.use_log_z     = true;
 
     opt.display.show_legend   = true;
