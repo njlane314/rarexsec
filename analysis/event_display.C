@@ -5,6 +5,7 @@
 #include <ROOT/RDataFrame.hxx>
 #include <TError.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -126,7 +127,24 @@ static void run_event_display(bool use_semantic)
     opt.combined_pdf  = "";
     opt.manifest_path = opt.out_dir + "/manifest.json";
 
-    opt.n_events      = 10;
+    // How many events to render per sample. Default is 10, but allow an
+    // override via the environment for quick testing:
+    //
+    //   export RAREXSEC_N_EVENTS=25
+    //
+    int n_events = 10;
+    if (const char* nev_c = std::getenv("RAREXSEC_N_EVENTS")) {
+        try {
+            n_events = std::max(1, std::stoi(nev_c));
+        } catch (...) {
+            std::cerr << "[event_display] Invalid RAREXSEC_N_EVENTS=" << nev_c
+                      << ", using default n_events=" << n_events << '\n';
+        }
+    }
+    opt.n_events = n_events;
+
+    std::cout << "[event_display] Will render up to " << opt.n_events
+              << " events per sample" << std::endl;
 
     std::string base_sel = "";
     if (rec.source == rarexsec::Source::MC && use_semantic) {
