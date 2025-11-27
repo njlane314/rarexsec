@@ -128,7 +128,7 @@ static void run_event_display(bool use_semantic)
 
     opt.n_events      = 10;
 
-    std::string base_sel = "is_vtx_in_image_u || is_vtx_in_image_v || is_vtx_in_image_w";
+    std::string base_sel = "";
     if (rec.source == rarexsec::Source::MC && use_semantic) {
     }
     opt.selection_expr = base_sel;
