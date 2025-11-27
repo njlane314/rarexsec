@@ -158,7 +158,7 @@ static void run_event_display(bool use_semantic)
     opt.display.margin        = 0.05;
 
     opt.display.det_min       = 0.0;
-    opt.display.det_max       = 1000.0;
+    opt.display.det_max       = 0.0;
     opt.display.det_threshold = 0.0;
     opt.display.use_log_z     = true;
 
