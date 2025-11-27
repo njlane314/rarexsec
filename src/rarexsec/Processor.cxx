@@ -115,7 +115,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
                 }
                 return static_cast<int>(Channel::Unknown);
             },
-            {"in_fiducial", "neutrino_pdg", "interaction_ccnc", "count_strange",
+            {"in_fiducial", "nu_pdg", "int_ccnc", "count_strange",
              "n_p", "n_pi_minus", "n_pi_plus", "n_pi0", "n_gamma"});
 
         node = node.Define(
