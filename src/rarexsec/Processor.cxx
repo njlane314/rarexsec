@@ -57,8 +57,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
             [](int kplus, int kminus, int kzero, int lambda0, int sigplus, int sigzero, int sigminus) {
                 return kplus + kminus + kzero + lambda0 + sigplus + sigzero + sigminus;
             },
-            {"count_kaon_plus", "count_kaon_minus", "count_kaon_zero",
-             "count_lambda", "count_sigma_plus", "count_sigma_zero", "count_sigma_minus"});
+            {"n_K_plus", "n_K_minus", "n_K0", "n_lambda", "n_sigma_plus", "n_sigma0", "n_sigma_minus"});
 
         node = node.Define(
             "is_strange",
@@ -117,7 +116,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
                 return static_cast<int>(Channel::Unknown);
             },
             {"in_fiducial", "neutrino_pdg", "interaction_ccnc", "count_strange",
-             "count_proton", "count_pi_minus", "count_pi_plus", "count_pi_zero", "count_gamma"});
+             "n_p", "n_pi_minus", "n_pi_plus", "n_pi0", "n_gamma"});
 
         node = node.Define(
             "is_signal",
