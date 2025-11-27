@@ -5,6 +5,7 @@
 #include <ROOT/RVec.hxx>
 #include <cmath>
 #include <cstdlib>
+#include <string>
 
 namespace {
 constexpr double kRecognisedPurityMin = 0.5;
@@ -49,7 +50,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
             [](float x, float y, float z) {
                 return rarexsec::fiducial::is_in_truth_volume(x, y, z);
             },
-            {"neutrino_vertex_x", "neutrino_vertex_y", "neutrino_vertex_z"});
+            {"nu_vx", "nu_vy", "nu_vz"});
 
         node = node.Define(
             "count_strange",
