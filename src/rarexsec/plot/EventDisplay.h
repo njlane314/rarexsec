@@ -45,7 +45,7 @@ class EventDisplay {
 
     struct Options {
         std::string out_dir = "plots";
-        int canvas_size = 1024;
+        int canvas_size = 1400;
         double margin = 0.10;
         bool use_log_z = true;
 
