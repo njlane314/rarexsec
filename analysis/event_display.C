@@ -122,7 +122,7 @@ static void run_event_display(bool use_semantic)
 
     opt.out_dir       = use_semantic ? "plots/event_display_semantic"
                                      : "plots/event_display_detector";
-    opt.image_format  = "png";
+    opt.image_format  = "pdf";
     opt.combined_pdf  = "";
     opt.manifest_path = opt.out_dir + "/manifest.json";
 
@@ -154,7 +154,7 @@ static void run_event_display(bool use_semantic)
     opt.mode = use_semantic ? EventDisplay::Mode::Semantic
                             : EventDisplay::Mode::Detector;
 
-    opt.display.canvas_size   = 900;
+    opt.display.canvas_size   = 1600;
     opt.display.margin        = 0.05;
 
     opt.display.det_min       = 0.0;
