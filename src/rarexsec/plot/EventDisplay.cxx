@@ -347,19 +347,33 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
     if (!opt.selection_expr.empty())
         filtered = filtered.Filter(opt.selection_expr);
 
-    auto limited = filtered.Range(static_cast<ULong64_t>(opt.n_events));
+    // Work out how many rows we actually have and cap by n_events.
+    const auto n_rows =
+        static_cast<std::size_t>(filtered.Count().GetValue());
+    if (n_rows == 0) {
+        std::cerr << "[EventDisplay] No rows matched selection; nothing to render."
+                  << '\n';
+        return;
+    }
+
+    const std::size_t n_to_render =
+        (opt.n_events > 0)
+            ? std::min<std::size_t>(n_rows,
+                                    static_cast<std::size_t>(opt.n_events))
+            : n_rows;
+
+    std::clog << "[EventDisplay] Selection matched " << n_rows
+              << " rows; rendering up to " << n_to_render << " events."
+              << '\n';
+
+    auto limited = filtered.Range(static_cast<ULong64_t>(n_to_render));
 
     const bool use_combined_pdf = (!opt.combined_pdf.empty() && opt.image_format == "pdf");
     std::filesystem::path combined_path;
     std::size_t total_pages = 0;
     if (use_combined_pdf) {
         combined_path = std::filesystem::path(opt.out_dir) / opt.combined_pdf;
-        const auto n_rows = static_cast<std::size_t>(limited.Count().GetValue());
-        if (n_rows == 0) {
-            std::cerr << "[EventDisplay] No rows matched selection; nothing to render." << '\n';
-            return;
-        }
-        total_pages = n_rows * opt.planes.size();
+        total_pages   = n_to_render * opt.planes.size();
 
 #if defined(R__HAS_IMPLICITMT)
         if (ROOT::IsImplicitMTEnabled()) {
@@ -392,6 +406,13 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
                 const std::vector<float>& det_u,
                 const std::vector<float>& det_v,
                 const std::vector<float>& det_w) {
+                // Debug: see which events actually get rendered.
+                std::clog << "[EventDisplay] Rendering detector images for "
+                          << "run=" << run
+                          << " sub=" << sub
+                          << " evt=" << evt
+                          << '\n';
+
                 auto pick = [&](const std::string& plane) -> const std::vector<float>& {
                     if (plane == "U")
                         return det_u;
@@ -480,6 +501,13 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
                 const std::vector<int>& sem_u,
                 const std::vector<int>& sem_v,
                 const std::vector<int>& sem_w) {
+                // Debug: see which events actually get rendered.
+                std::clog << "[EventDisplay] Rendering semantic images for "
+                          << "run=" << run
+                          << " sub=" << sub
+                          << " evt=" << evt
+                          << '\n';
+
                 auto pick = [&](const std::string& plane) -> const std::vector<int>& {
                     if (plane == "U")
                         return sem_u;
