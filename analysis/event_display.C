@@ -1,3 +1,7 @@
+// Run corrected and uncorrected displays with:
+//   root -l -b -q 'analysis/event_display.C("event_display_detector()")'
+//   root -l -b -q 'analysis/event_display.C("event_display_uncorrected_detector()")'
+
 #include "rarexsec/Hub.h"
 #include "rarexsec/Processor.h"
 #include "rarexsec/plot/EventDisplay.h"
@@ -74,7 +78,7 @@ static rarexsec::Entry const* pick_entry(rarexsec::Hub& hub,
     return nullptr;
 }
 
-static void run_event_display(bool use_semantic)
+static void run_event_display(bool use_semantic, bool use_uncorrected)
 {
     gErrorIgnoreLevel = kWarning;
 
@@ -121,8 +125,13 @@ static void run_event_display(bool use_semantic)
 
     EventDisplay::BatchOptions opt;
 
-    opt.out_dir       = use_semantic ? "plots/event_display_semantic"
-                                     : "plots/event_display_detector";
+    if (use_uncorrected) {
+        opt.out_dir = use_semantic ? "plots/event_display_semantic_uncorrected"
+                                   : "plots/event_display_detector_uncorrected";
+    } else {
+        opt.out_dir = use_semantic ? "plots/event_display_semantic"
+                                   : "plots/event_display_detector";
+    }
     opt.image_format  = "png";
     opt.combined_pdf  = "";
     opt.manifest_path = opt.out_dir + "/manifest.json";
@@ -153,21 +162,37 @@ static void run_event_display(bool use_semantic)
 
     opt.planes = {"U", "V", "W"};
 
-    opt.file_pattern = use_semantic
-        ? "evd_sem_{plane}_run{run}_sub{sub}_evt{evt}"
-        : "evd_det_{plane}_run{run}_sub{sub}_evt{evt}";
+    if (use_uncorrected) {
+        opt.file_pattern = use_semantic
+            ? "evd_sem_uncorr_{plane}_run{run}_sub{sub}_evt{evt}"
+            : "evd_det_uncorr_{plane}_run{run}_sub{sub}_evt{evt}";
+    } else {
+        opt.file_pattern = use_semantic
+            ? "evd_sem_{plane}_run{run}_sub{sub}_evt{evt}"
+            : "evd_det_{plane}_run{run}_sub{sub}_evt{evt}";
+    }
 
     opt.cols.run = "run";
     opt.cols.sub = "sub";
     opt.cols.evt = "evt";
 
-    opt.cols.det_u = "detector_image_u";
-    opt.cols.det_v = "detector_image_v";
-    opt.cols.det_w = "detector_image_w";
+    if (use_uncorrected) {
+        opt.cols.det_u = "detector_image_uncorrected_u";
+        opt.cols.det_v = "detector_image_uncorrected_v";
+        opt.cols.det_w = "detector_image_uncorrected_w";
 
-    opt.cols.sem_u = "semantic_image_u";
-    opt.cols.sem_v = "semantic_image_v";
-    opt.cols.sem_w = "semantic_image_w";
+        opt.cols.sem_u = "semantic_image_uncorrected_u";
+        opt.cols.sem_v = "semantic_image_uncorrected_v";
+        opt.cols.sem_w = "semantic_image_uncorrected_w";
+    } else {
+        opt.cols.det_u = "detector_image_u";
+        opt.cols.det_v = "detector_image_v";
+        opt.cols.det_w = "detector_image_w";
+
+        opt.cols.sem_u = "semantic_image_u";
+        opt.cols.sem_v = "semantic_image_v";
+        opt.cols.sem_w = "semantic_image_w";
+    }
 
     opt.mode = use_semantic ? EventDisplay::Mode::Semantic
                             : EventDisplay::Mode::Detector;
@@ -187,6 +212,7 @@ static void run_event_display(bool use_semantic)
 
     std::cout << "[event_display] Rendering "
               << (use_semantic ? "semantic" : "detector")
+              << (use_uncorrected ? " uncorrected" : "")
               << " event displays..." << std::endl;
 
     EventDisplay::render_from_rdf(node, opt);
@@ -196,15 +222,30 @@ static void run_event_display(bool use_semantic)
 
 void event_display_detector()
 {
-    run_event_display(false);
+    run_event_display(false, false);
 }
 
 void event_display_semantic()
 {
-    run_event_display(true);
+    run_event_display(true, false);
 }
 
 void event_display()
 {
     event_display_detector();
+}
+
+void event_display_uncorrected_detector()
+{
+    run_event_display(false, true);
+}
+
+void event_display_uncorrected_semantic()
+{
+    run_event_display(true, true);
+}
+
+void event_display_uncorrected()
+{
+    event_display_uncorrected_detector();
 }
