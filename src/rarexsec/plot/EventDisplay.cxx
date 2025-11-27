@@ -179,10 +179,10 @@ void rarexsec::plot::EventDisplay::draw_detector(TCanvas& c)
     if (opt_.use_log_z)
         c.SetLogz();
 
-    hist_->Draw("COL");
+    hist_->Draw("COLZ");
 }
 //____________________________________________________________________________
-void rarexsec::plot::EventDisplay::draw_semantic(TCanvas& c) 
+void rarexsec::plot::EventDisplay::draw_semantic(TCanvas& c)
 {
     constexpr int palette_size = 15;
     const int background = TColor::GetColor(230, 230, 230);
@@ -228,7 +228,7 @@ void rarexsec::plot::EventDisplay::draw_semantic(TCanvas& c)
     hist_->GetXaxis()->SetAxisColor(0);
     hist_->GetYaxis()->SetAxisColor(0);
 
-    hist_->Draw("COL");
+    hist_->Draw("COLZ");
 }
 //____________________________________________________________________________
 void rarexsec::plot::EventDisplay::draw_semantic_legend() 
