@@ -122,7 +122,7 @@ static void run_event_display(bool use_semantic)
 
     opt.out_dir       = use_semantic ? "plots/event_display_semantic"
                                      : "plots/event_display_detector";
-    opt.image_format  = "pdf";
+    opt.image_format  = "png";
     opt.combined_pdf  = "";
     opt.manifest_path = opt.out_dir + "/manifest.json";
 
