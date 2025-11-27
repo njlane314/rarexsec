@@ -6,7 +6,7 @@ TOPDIR="${RAREXSEC:-$(cd "$(dirname "$0")"/.. && pwd)}"
 export RAREXSEC="$TOPDIR"
 
 LIBDIR="$TOPDIR/build/lib"; [[ -d "$LIBDIR" ]] || LIBDIR="$TOPDIR/lib"
-INCDIR="$TOPDIR/include"
+INCDIR="$TOPDIR/include"; [[ -d "$INCDIR" ]] || INCDIR="$TOPDIR/src"
 SETUP="$TOPDIR/scripts/setup_rarexsec.C"; [[ -f "$SETUP" ]] || SETUP="$TOPDIR/setup_rarexsec.C"
 LIB="$LIBDIR/librarexsec.so"
 MACRO="${1:-$TOPDIR/analysis/main.C}"
