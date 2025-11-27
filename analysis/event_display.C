@@ -157,10 +157,12 @@ static void run_event_display(bool use_semantic)
     opt.display.canvas_size   = 900;
     opt.display.margin        = 0.10;
 
-    opt.display.det_threshold = 0.0f;
-    opt.display.det_min       = 0.0001f;
-    opt.display.det_max       = 10000.0f;
-    opt.display.use_log_z     = false;
+    // For the detector view we now plot the raw ADC values and derive the
+    // z-range per image inside EventDisplay, so these are just defaults.
+    opt.display.det_threshold = 0.0f;   // not used in raw-mode filling
+    opt.display.det_min       = 0.0f;
+    opt.display.det_max       = 0.0f;
+    opt.display.use_log_z     = false;  // keep linear scale; background stays blue
 
     opt.display.show_legend   = true;
     opt.display.legend_cols   = 4;

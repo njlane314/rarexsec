@@ -125,6 +125,8 @@ void rarexsec::plot::EventDisplay::build_histogram()
     hist_->SetDirectory(nullptr);
 
     if (std::holds_alternative<DetectorData>(data_)) {
+        // Detector mode: fill with *raw* detector values, no thresholding or
+        // clamping, so we don't lose any information from the input vector.
         const auto& v = std::get<DetectorData>(data_);
         const int n = static_cast<int>(v.size());
         for (int r = 0; r < H; ++r) {
@@ -133,8 +135,7 @@ void rarexsec::plot::EventDisplay::build_histogram()
                 if (idx >= n)
                     break;
                 const float x = v[idx];
-                const float y = (x > opt_.det_threshold) ? x : static_cast<float>(opt_.det_min);
-                hist_->SetBinContent(c + bin_offset, r + bin_offset, y);
+                hist_->SetBinContent(c + bin_offset, r + bin_offset, x);
             }
         }
     } else {
@@ -157,6 +158,9 @@ void rarexsec::plot::EventDisplay::draw_detector(TCanvas& c)
     c.SetTicks(0, 0);
 
     hist_->SetStats(false);
+    // det_min / det_max are now set per-image in render_from_rdf from the raw
+    // data, so the colour scale spans the full dynamic range of the event,
+    // while keeping the lowest values (background) blue.
     hist_->SetMinimum(opt_.det_min);
     hist_->SetMaximum(opt_.det_max);
 
@@ -395,6 +399,18 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
 
                 for (const auto& plane : opt.planes) {
                     const auto& img = pick(plane);
+
+                    // Start from the batch display options, but compute a
+                    // per-image z-range from the raw detector values so we
+                    // don't wash out low-amplitude parts of the track with a
+                    // single hard-coded [det_min, det_max].
+                    auto plane_opts = display_opts;
+                    if (!img.empty()) {
+                        const auto [mn_it, mx_it] =
+                            std::minmax_element(img.begin(), img.end());
+                        plane_opts.det_min = *mn_it;
+                        plane_opts.det_max = *mx_it;
+                    }
                     const std::string tag = format_tag(opt.file_pattern, plane, run, sub, evt);
                     const std::string title =
                         "Detector Image, Plane " + plane +
@@ -403,7 +419,7 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
                         ", Event " + std::to_string(evt);
 
                     rarexsec::plot::EventDisplay::Spec spec{tag, title, Mode::Detector};
-                    EventDisplay ed(spec, display_opts, img);
+                    EventDisplay ed(spec, plane_opts, img);
 
                     if (use_combined_pdf) {
                         const std::size_t idx = page_idx++;
