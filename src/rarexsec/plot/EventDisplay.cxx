@@ -126,9 +126,6 @@ void rarexsec::plot::EventDisplay::build_histogram()
     hist_->SetDirectory(nullptr);
 
     if (std::holds_alternative<DetectorData>(data_)) {
-        // Detector mode: fill the histogram with the raw detector values.
-        // For log-scale plots we only touch values <= 0 so ROOT's log-z
-        // drawing works; they are promoted to det_min (set per image).
         const auto& v = std::get<DetectorData>(data_);
         const int n = static_cast<int>(v.size());
         for (int r = 0; r < H; ++r) {
@@ -137,7 +134,7 @@ void rarexsec::plot::EventDisplay::build_histogram()
                 if (idx >= n)
                     break;
                 float x = v[idx];
-                if (opt_.use_log_z && x <= 0.f)
+                if (opt_.use_log_z && x <= opt_.det_min)
                     x = static_cast<float>(opt_.det_min);
                 hist_->SetBinContent(c + bin_offset, r + bin_offset, x);
             }
@@ -162,9 +159,6 @@ void rarexsec::plot::EventDisplay::draw_detector(TCanvas& c)
     c.SetTicks(0, 0);
 
     hist_->SetStats(false);
-    // det_min / det_max are now set per-image in render_from_rdf from the raw
-    // data, so the colour scale spans the full dynamic range of the event,
-    // while keeping the lowest values (background) blue.
     hist_->SetMinimum(opt_.det_min);
     hist_->SetMaximum(opt_.det_max);
 
@@ -347,7 +341,6 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
     if (!opt.selection_expr.empty())
         filtered = filtered.Filter(opt.selection_expr);
 
-    // Work out how many rows we actually have and cap by n_events.
     const auto n_rows =
         static_cast<std::size_t>(filtered.Count().GetValue());
     if (n_rows == 0) {
@@ -406,7 +399,6 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
                 const std::vector<float>& det_u,
                 const std::vector<float>& det_v,
                 const std::vector<float>& det_w) {
-                // Debug: see which events actually get rendered.
                 std::clog << "[EventDisplay] Rendering detector images for "
                           << "run=" << run
                           << " sub=" << sub
@@ -425,34 +417,27 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
                 for (const auto& plane : opt.planes) {
                     const auto& img = pick(plane);
 
-                    // Start from the batch display options, but compute a
-                    // per-image z-range from the raw detector values so we
-                    // don't wash out low-amplitude parts of the track.
                     auto plane_opts = display_opts;
                     if (!img.empty()) {
-                        const auto [mn_it, mx_it] =
-                            std::minmax_element(img.begin(), img.end());
-                        float mn = *mn_it;
-                        float mx = *mx_it;
+                        std::vector<float> vals;
+                        vals.reserve(img.size());
+                        for (float v : img)
+                            if (v > 0.0f)
+                                vals.push_back(v);
 
-                        if (display_opts.use_log_z) {
-                            // For log scale we need a strictly positive minimum.
-                            float min_pos = std::numeric_limits<float>::max();
-                            for (float v : img) {
-                                if (v > 0.f && v < min_pos)
-                                    min_pos = v;
-                            }
-                            if (min_pos == std::numeric_limits<float>::max()) {
-                                // No positive entries: fall back to 1 so we
-                                // still get a consistent (though flat) image.
-                                min_pos = 1.f;
-                                mx = 1.f;
-                            }
-                            plane_opts.det_min = min_pos;
-                            plane_opts.det_max = mx;
-                        } else {
-                            plane_opts.det_min = mn;
-                            plane_opts.det_max = mx;
+                        if (!vals.empty()) {
+                            std::sort(vals.begin(), vals.end());
+                            auto q = [&](double f) -> float {
+                                std::size_t idx = std::min(vals.size() - 1,
+                                                           static_cast<std::size_t>(f * vals.size()));
+                                return vals[idx];
+                            };
+
+                            const float min_pos = q(0.02);
+                            const float max_val = q(0.995);
+
+                            plane_opts.det_min = std::max(min_pos, 1e-4f);
+                            plane_opts.det_max = max_val;
                         }
                     }
                     const std::string tag = format_tag(opt.file_pattern, plane, run, sub, evt);
@@ -501,7 +486,6 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
                 const std::vector<int>& sem_u,
                 const std::vector<int>& sem_v,
                 const std::vector<int>& sem_w) {
-                // Debug: see which events actually get rendered.
                 std::clog << "[EventDisplay] Rendering semantic images for "
                           << "run=" << run
                           << " sub=" << sub
