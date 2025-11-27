@@ -61,6 +61,14 @@ static rarexsec::Entry const* pick_entry(rarexsec::Hub& hub,
     if (!data_entries.empty())
         return data_entries.front();
 
+    if (!want_mc) {
+        auto sim_entries = hub.simulation_entries(beamline, periods);
+        if (!sim_entries.empty()) {
+            std::cerr << "[event_display] No data entries found, using MC instead.\n";
+            return sim_entries.front();
+        }
+    }
+
     std::cerr << "[event_display] No suitable entries found for beamline=" << beamline << "\n";
     return nullptr;
 }
