@@ -2,6 +2,30 @@
 
 set -euo pipefail
 
+SCRIPT_NAME="$(basename "$0")"
+
+usage() {
+    cat <<EOF
+Usage: ${SCRIPT_NAME} <macro-file> [function-name]
+
+Provide the macro path as the first argument and (optionally) the function name
+without parentheses. For example:
+  ${SCRIPT_NAME} analysis/event_display.C event_display_detector
+EOF
+}
+
+if [[ ${#} -ge 1 && ( $1 == *"("* || $1 == *")"* ) ]]; then
+    echo "Macro argument should not include a function call; pass the macro and function separately." >&2
+    usage
+    exit 1
+fi
+
+if [[ ${#} -ge 2 && ( $2 == *"("* || $2 == *")"* ) ]]; then
+    echo "Function argument should be provided without parentheses." >&2
+    usage
+    exit 1
+fi
+
 TOPDIR="${RAREXSEC:-$(cd "$(dirname "$0")"/.. && pwd)}"
 export RAREXSEC="$TOPDIR"
 
