@@ -1,6 +1,6 @@
 // Run corrected and uncorrected displays with:
-//   root -l -b -q 'analysis/event_display.C("event_display_detector()")'
-//   root -l -b -q 'analysis/event_display.C("event_display_uncorrected_detector()")'
+//   ./scripts/rarexsec-root.sh analysis/event_display.C event_display_detector
+//   ./scripts/rarexsec-root.sh analysis/event_display.C event_display_uncorrected_detector
 
 #include "rarexsec/Hub.h"
 #include "rarexsec/Processor.h"
