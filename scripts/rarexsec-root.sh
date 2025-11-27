@@ -9,6 +9,12 @@ LIBDIR="$TOPDIR/build/lib"; [[ -d "$LIBDIR" ]] || LIBDIR="$TOPDIR/lib"
 INCDIR="$TOPDIR/include"
 SETUP="$TOPDIR/scripts/setup_rarexsec.C"; [[ -f "$SETUP" ]] || SETUP="$TOPDIR/setup_rarexsec.C"
 LIB="$LIBDIR/librarexsec.so"
+ROOT_OPTS=(-l -b -q)
+while [[ $# -gt 0 && $1 == -* ]]; do
+  ROOT_OPTS+=("$1")
+  shift
+done
+
 MACRO="${1:-$TOPDIR/analysis/main.C}"
 # If no function name is given, use the macro stem: foo.C -> foo()
 FUNC="${2:-$(basename "${MACRO%.*}")}" 
@@ -24,4 +30,4 @@ export RAREXSEC_CFG RAREXSEC_CONFIG RAREXSEC_TREE RAREXSEC_BEAMLINE RAREXSEC_PER
 export LD_LIBRARY_PATH="$LIBDIR:${LD_LIBRARY_PATH:-}"
 export ROOT_INCLUDE_PATH="$INCDIR:${ROOT_INCLUDE_PATH:-}"
 
-root -l -b -q -e "gROOT->LoadMacro(\"$SETUP\"); setup_rarexsec(\"$LIB\",\"$INCDIR\"); gROOT->LoadMacro(\"$MACRO\"); ${FUNC}();"
+root "${ROOT_OPTS[@]}" -e "gROOT->LoadMacro(\"$SETUP\"); setup_rarexsec(\"$LIB\",\"$INCDIR\"); gROOT->LoadMacro(\"$MACRO\"); ${FUNC}();"
