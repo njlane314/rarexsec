@@ -6,7 +6,7 @@
         "samples": [
           {
             "kind": "beam",
-            "file": "/exp/uboone/data/users/nlane/analysis/prod_strange_resample_fhc_run2_fhc_reco2_reco2_inferencing_3_new_analysis.root",
+            "file": "/exp/uboone/data/users/nlane/analysis/prod_strange_resample_fhc_run2_fhc_reco2_reco2_inferencing_5_new_analysis.root",
             "pot": 0,
             "pot_eff": 0,
             "trig": 0,
