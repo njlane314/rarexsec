@@ -158,9 +158,9 @@ static void run_event_display(bool use_semantic)
     opt.display.margin        = 0.10;
 
     opt.display.det_threshold = 0.0f;
-    opt.display.det_min       = 0.0f;
+    opt.display.det_min       = 0.0001f;
     opt.display.det_max       = 10000.0f;
-    opt.display.use_log_z     = true;
+    opt.display.use_log_z     = false;
 
     opt.display.show_legend   = true;
     opt.display.legend_cols   = 4;
