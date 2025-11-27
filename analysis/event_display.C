@@ -154,12 +154,12 @@ static void run_event_display(bool use_semantic)
     opt.mode = use_semantic ? EventDisplay::Mode::Semantic
                             : EventDisplay::Mode::Detector;
 
-    opt.display.canvas_size   = 1600;
-    opt.display.margin        = 0.05;
+    opt.display.canvas_size   = 900;
+    opt.display.margin        = 0.10;
 
-    opt.display.det_min       = 0.0;
-    opt.display.det_max       = 100000.0;
-    opt.display.det_threshold = 0.0;
+    opt.display.det_threshold = 4.0f;
+    opt.display.det_min       = 1.0f;
+    opt.display.det_max       = 1000.0f;
     opt.display.use_log_z     = true;
 
     opt.display.show_legend   = true;

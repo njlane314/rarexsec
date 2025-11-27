@@ -106,7 +106,7 @@ std::pair<int, int> rarexsec::plot::EventDisplay::deduce_grid(int requested_w,
         int w = static_cast<int>(flat_size / requested_h);
         return {std::max(1, w), requested_h};
     }
-    int dim = static_cast<int>(std::round(std::sqrt(static_cast<double>(flat_size))));
+    int dim = static_cast<int>(std::sqrt(static_cast<double>(flat_size)));
     dim = std::max(1, dim);
     return {dim, dim};
 }
