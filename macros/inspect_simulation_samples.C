@@ -77,7 +77,6 @@ void inspect_simulation_samples() {
         std::cout << "Total triggers (nominal): " << total_trig_nom << std::endl;
         std::cout << "Total triggers (equivalent): " << total_trig_eqv << std::endl;
 
-        ROOT::DisableImplicitMT();
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << std::endl;
     }
