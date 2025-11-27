@@ -159,10 +159,10 @@ static void run_event_display(bool use_semantic)
 
     // For the detector view we now plot the raw ADC values and derive the
     // z-range per image inside EventDisplay, so these are just defaults.
-    opt.display.det_threshold = 0.0f;   // not used in raw-mode filling
-    opt.display.det_min       = 0.0f;
-    opt.display.det_max       = 0.0f;
-    opt.display.use_log_z     = false;  // keep linear scale; background stays blue
+    opt.display.det_threshold = 0.0f;   // raw filling, only used for log safety
+    opt.display.det_min       = 0.0f;   // will be set per image
+    opt.display.det_max       = 0.0f;   // will be set per image
+    opt.display.use_log_z     = true;   // enable log-scale detector display
 
     opt.display.show_legend   = true;
     opt.display.legend_cols   = 4;

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <mutex>
 #include <numeric>
 #include <sstream>
@@ -125,8 +126,9 @@ void rarexsec::plot::EventDisplay::build_histogram()
     hist_->SetDirectory(nullptr);
 
     if (std::holds_alternative<DetectorData>(data_)) {
-        // Detector mode: fill with *raw* detector values, no thresholding or
-        // clamping, so we don't lose any information from the input vector.
+        // Detector mode: fill the histogram with the raw detector values.
+        // For log-scale plots we only touch values <= 0 so ROOT's log-z
+        // drawing works; they are promoted to det_min (set per image).
         const auto& v = std::get<DetectorData>(data_);
         const int n = static_cast<int>(v.size());
         for (int r = 0; r < H; ++r) {
@@ -134,7 +136,9 @@ void rarexsec::plot::EventDisplay::build_histogram()
                 const int idx = r * W + c;
                 if (idx >= n)
                     break;
-                const float x = v[idx];
+                float x = v[idx];
+                if (opt_.use_log_z && x <= 0.f)
+                    x = static_cast<float>(opt_.det_min);
                 hist_->SetBinContent(c + bin_offset, r + bin_offset, x);
             }
         }
@@ -402,14 +406,33 @@ void rarexsec::plot::EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const Ba
 
                     // Start from the batch display options, but compute a
                     // per-image z-range from the raw detector values so we
-                    // don't wash out low-amplitude parts of the track with a
-                    // single hard-coded [det_min, det_max].
+                    // don't wash out low-amplitude parts of the track.
                     auto plane_opts = display_opts;
                     if (!img.empty()) {
                         const auto [mn_it, mx_it] =
                             std::minmax_element(img.begin(), img.end());
-                        plane_opts.det_min = *mn_it;
-                        plane_opts.det_max = *mx_it;
+                        float mn = *mn_it;
+                        float mx = *mx_it;
+
+                        if (display_opts.use_log_z) {
+                            // For log scale we need a strictly positive minimum.
+                            float min_pos = std::numeric_limits<float>::max();
+                            for (float v : img) {
+                                if (v > 0.f && v < min_pos)
+                                    min_pos = v;
+                            }
+                            if (min_pos == std::numeric_limits<float>::max()) {
+                                // No positive entries: fall back to 1 so we
+                                // still get a consistent (though flat) image.
+                                min_pos = 1.f;
+                                mx = 1.f;
+                            }
+                            plane_opts.det_min = min_pos;
+                            plane_opts.det_max = mx;
+                        } else {
+                            plane_opts.det_min = mn;
+                            plane_opts.det_max = mx;
+                        }
                     }
                     const std::string tag = format_tag(opt.file_pattern, plane, run, sub, evt);
                     const std::string title =
