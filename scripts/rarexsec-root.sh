@@ -56,7 +56,7 @@ SETUP="$TOPDIR/scripts/setup_rarexsec.C"; [[ -f "$SETUP" ]] || SETUP="$TOPDIR/se
 LIB="$LIBDIR/librarexsec.so"
 MACRO="${macro_arg:-$TOPDIR/analysis/main.C}"
 # If no function name is given, use the macro stem: foo.C -> foo()
-FUNC="${func_arg:-$(basename "${MACRO%.*}")}""
+FUNC="${func_arg:-$(basename "${MACRO%.*}")}" 
 
 : "${RAREXSEC_CFG:=$TOPDIR/data/samples.test-new-analysis.json}"
 : "${RAREXSEC_CONFIG:=$RAREXSEC_CFG}"
