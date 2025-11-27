@@ -172,7 +172,7 @@ static void run_event_display(bool use_semantic)
     opt.mode = use_semantic ? EventDisplay::Mode::Semantic
                             : EventDisplay::Mode::Detector;
 
-    opt.display.canvas_size   = 2000;
+    opt.display.canvas_size   = 3000;
     opt.display.margin        = 0.10;
 
     // For the detector view we now plot the raw ADC values and derive the
