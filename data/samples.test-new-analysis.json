@@ -1,0 +1,19 @@
+{
+  "beamlines": {
+    "numi-fhc": {
+      "run1": {
+        "nominal_pot": 0,
+        "samples": [
+          {
+            "kind": "beam",
+            "file": "/exp/uboone/data/users/nlane/analysis/New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2_inferencing_3_new_analysis.root",
+            "pot": 0,
+            "pot_eff": 0,
+            "trig": 0,
+            "trig_eff": 0
+          }
+        ]
+      }
+    }
+  }
+}
