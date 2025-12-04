@@ -3,7 +3,7 @@
   "schema_version": "1.0",
   "recipe_kind": "instance",
   "project": "sfs",
-  "ntuple_base_directory": "/exp/uboone/data/users/nlane/ntuples",
+  "ntuple_base_directory": "/exp/uboone/data/users/nlane/ntuples/dev",
   "run_configurations": {
     "bnb": {
       "active": true,
