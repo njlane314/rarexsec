@@ -58,7 +58,7 @@ MACRO="${macro_arg:-$TOPDIR/analysis/main.C}"
 # If no function name is given, use the macro stem: foo.C -> foo()
 FUNC="${func_arg:-$(basename "${MACRO%.*}")}" 
 
-: "${RAREXSEC_CFG:=$TOPDIR/data/samples.test-new-analysis.json}"
+: "${RAREXSEC_CFG:=$TOPDIR/data/samples-dev.json}"
 : "${RAREXSEC_CONFIG:=$RAREXSEC_CFG}"
 : "${RAREXSEC_TREE:=events}"
 : "${RAREXSEC_BEAMLINE:=numi-fhc}"
