@@ -133,14 +133,14 @@ void plot_inf_score_first() {
 
         rarexsec::plot::Options opt;
         opt.out_dir = "plots/selection";
-        opt.use_log_y = true;
+        opt.use_log_y = false;
         opt.overlay_signal = true;
         opt.annotate_numbers = true;
         opt.image_format = "pdf";
         opt.legend_on_top = true;
         opt.beamline = env.beamline;
         opt.periods = env.periods;
-        opt.analysis_region_label = "Empty Selection";
+        opt.analysis_region_label = "NuMu Selection";
         opt.signal_channels = rarexsec::plot::Channels::signal_keys();
 
         rarexsec::plot::TH1DModel spec;
@@ -149,9 +149,9 @@ void plot_inf_score_first() {
         spec.title = ";First inference score;Events";
         spec.expr = "inf_scores.empty() ? -1.0f : inf_scores[0]";
         spec.weight = "w_nominal";
-        spec.nbins = 50;
-        spec.xmin = 0.0;
-        spec.xmax = 1.0;
+        spec.nbins = 100;
+        spec.xmin = -1.0;
+        spec.xmax = 2.0;
         spec.sel = rarexsec::selection::Preset::InclusiveMuCC;
 
         rarexsec::plot::Plotter plotter(opt);
