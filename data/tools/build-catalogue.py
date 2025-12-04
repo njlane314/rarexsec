@@ -508,7 +508,7 @@ def default_xmls() -> list[Path]:
     return [
         Path("/exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs/ubana/ubana/searchingforstrangeness/xml/numi_fhc_workflow_core.xml"),
         Path("/exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs/ubana/ubana/searchingforstrangeness/xml/numi_fhc_workflow_detvar.xml"),
-        Path("/exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs/ubana/ubana/searchingforstrangeness/xml/numi_fhc_run1_dev.xml"),
+        Path("/exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs/ubana/ubana/searchingforstrangeness/dev/numi_fhc_run1_dev.xml"),
     ]
 
 # --- Main ---------------------------------------------------------------------
