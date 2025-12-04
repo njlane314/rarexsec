@@ -23,7 +23,7 @@
                     {
                         "file": "/exp/uboone/data/users/nlane/ntuples/dev/imaging_dirt_run1_fhc.root",
                         "pot": 3.922e+20,
-                        "pot_eff": 1.5e+22,
+                        "pot_eff": 1.0e+23,
                         "trig": 0,
                         "trig_eff": 0,
                         "kind": "dirt"
