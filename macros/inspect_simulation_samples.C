@@ -8,21 +8,46 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cctype>
+
+static std::vector<std::string> get_beamlines(const rarexsec::Env& env) {
+    std::vector<std::string> out;
+
+    if (const char* bls = gSystem->Getenv("RAREXSEC_BEAMLINES")) {
+        std::string s{bls};
+        std::string tok;
+
+        auto flush = [&]() {
+            if (!tok.empty()) {
+                out.push_back(tok);
+                tok.clear();
+            }
+        };
+
+        for (char ch : s) {
+            if (ch == ',' || std::isspace(static_cast<unsigned char>(ch))) {
+                flush();
+            } else {
+                tok.push_back(ch);
+            }
+        }
+        flush();
+    }
+
+    if (out.empty()) {
+        out.push_back(env.beamline);
+    }
+
+    return out;
+}
 
 void inspect_simulation_samples() {
     try {
-        //ROOT::EnableThreadSafety();
         ROOT::EnableImplicitMT();
 
         const auto env = rarexsec::Env::from_env();
         auto hub = env.make_hub();
-        const auto samples = hub.simulation_entries(env.beamline, env.periods);
-
-        std::cout << "Loaded beamline " << env.beamline << " for";
-        for (const auto& period : env.periods) {
-            std::cout << ' ' << period;
-        }
-        std::cout << " with " << samples.size() << " simulation samples." << std::endl;
+        auto beamlines = get_beamlines(env);
 
         auto origin_to_string = [](rarexsec::sample::origin kind) {
             switch (kind) {
@@ -41,6 +66,26 @@ void inspect_simulation_samples() {
                 return "unknown";
             }
         };
+
+        using SamplePtr =
+            decltype(hub.simulation_entries(env.beamline, env.periods))::value_type;
+
+        std::vector<SamplePtr> samples;
+
+        for (const auto& bl : beamlines) {
+            auto sub = hub.simulation_entries(bl, env.periods);
+            samples.insert(samples.end(), sub.begin(), sub.end());
+        }
+
+        std::cout << "Loaded beamlines";
+        for (const auto& bl : beamlines) {
+            std::cout << ' ' << bl;
+        }
+        std::cout << " for";
+        for (const auto& period : env.periods) {
+            std::cout << ' ' << period;
+        }
+        std::cout << " with " << samples.size() << " simulation samples." << std::endl;
 
         double total_pot_nom = 0.0;
         double total_pot_eqv = 0.0;
