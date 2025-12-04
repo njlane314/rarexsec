@@ -11,7 +11,7 @@
 
 void inspect_simulation_samples() {
     try {
-        ROOT::EnableThreadSafety();
+        //ROOT::EnableThreadSafety();
         ROOT::EnableImplicitMT();
 
         const auto env = rarexsec::Env::from_env();
