@@ -1,0 +1,114 @@
+{
+  "role": "recipe",
+  "schema_version": "1.0",
+  "recipe_kind": "instance",
+  "project": "sfs",
+  "ntuple_base_directory": "/exp/uboone/data/users/nlane/ntuples",
+  "run_configurations": {
+    "bnb": {
+      "active": true,
+      "run1": { "pot": 3.332e+20, "samples": [] },
+      "run2": { "pot": 3.057e+20, "samples": [] },
+      "run3": { "pot": 2.671e+20, "samples": [] },
+      "run4": { "pot": 3.273e+20, "samples": [] },
+      "run5": { "pot": 1.366e+20, "samples": [] }
+    },
+    "bnb_ext": {
+      "active": true,
+      "run1": { "ext_triggers": 40062895, "samples": [] },
+      "run2": { "ext_triggers": 165820967, "samples": [] },
+      "run3": { "ext_triggers": 194770254, "samples": [] },
+      "run4": { "ext_triggers": 288582511, "samples": [] },
+      "run5": { "ext_triggers": 138338167, "samples": [] }
+    },
+    "numi-fhc": {
+      "active": true,
+      "run1": {
+        "pot": 3.922e+20,
+        "samples": [
+          {
+            "sample_key": "mc_inclusive_run1_fhc",
+            "stage_name": "selection_beam",
+            "sample_type": "mc",
+            "exclusion_truth_filters": ["mc_strangeness_run1_fhc"],
+            "detector_variations": [
+              {
+                "sample_key": "mc_inclusive_run1_fhc_detvar_cv",
+                "variation_type": "cv",
+                "stage_name": "selection_detvar_cv"
+              }
+            ]
+          },
+          {
+            "sample_key": "mc_strangeness_run1_fhc",
+            "stage_name": "selection_strangeness",
+            "sample_type": "mc",
+            "truth_filter": "(mc_n_strange > 0)",
+            "detector_variations": [
+              {
+                "sample_key": "mc_strangeness_run1_fhc_detvar_cv",
+                "variation_type": "cv",
+                "stage_name": "selection_detvar_cv"
+              }
+            ]
+          },
+          {
+            "sample_key": "mc_dirt_run1_fhc",
+            "stage_name": "selection_dirt",
+            "sample_type": "dirt"
+          },
+          {
+            "sample_key": "imaging_beam_run1_fhc",
+            "stage_name": "dev_beam_imaging_evtw_full",
+            "sample_type": "mc"
+          },
+          {
+            "sample_key": "imaging_strangeness_run1_fhc",
+            "stage_name": "dev_strange_imaging_evtw_full",
+            "sample_type": "mc",
+            "truth_filter": "(mc_n_strange > 0)"
+          },
+          {
+            "sample_key": "imaging_dirt_run1_fhc",
+            "stage_name": "dev_dirt_imaging_evtw_full",
+            "sample_type": "dirt"
+          }
+        ]
+      },
+      "run2": { "pot": 1.766e+20, "samples": [] },
+      "run3": { "pot": 4.466e+14, "samples": [] },
+      "run4": { "pot": 2.126e+20, "samples": [] },
+      "run5": { "pot": 2.461e+20, "samples": [] }
+    },
+    "numi-rhc": {
+      "active": true,
+      "run1": { "pot": 6.268e+19, "samples": [] },
+      "run2": { "pot": 2.971e+20, "samples": [] },
+      "run3": { "pot": 5.387e+20, "samples": [] },
+      "run4": { "pot": 3.111e+20, "samples": [] },
+      "run5": { "pot": 4.645e+15, "samples": [] }
+    },
+    "numi-ext": {
+      "active": true,
+      "run1": {
+        "ext_triggers": 40062895,
+        "samples": [
+          {
+            "sample_key": "numi_ext_run1",
+            "stage_name": "selection_ext",
+            "sample_type": "ext"
+          },
+          {
+            "sample_key": "imaging_numi_ext_run1",
+            "stage_name": "dev_cosmic_imaging_data_full",
+            "sample_type": "ext"
+          }
+        ]
+      },
+      "run2": { "ext_triggers": 165820967, "samples": [] },
+      "run3": { "ext_triggers": 194770254, "samples": [] },
+      "run4": { "ext_triggers": 288582511, "samples": [] },
+      "run5": { "ext_triggers": 138338167, "samples": [] }
+    }
+  }
+}
