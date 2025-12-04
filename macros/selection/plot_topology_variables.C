@@ -1,5 +1,7 @@
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RVec.hxx>
+
+#include <cctype>
 #include <exception>
 #include <iostream>
 #include <vector>
@@ -10,14 +12,55 @@
 #include <rarexsec/plot/Descriptors.h>
 #include <rarexsec/plot/Plotter.h>
 
+static std::vector<std::string> get_beamlines(const rarexsec::Env& env) {
+    std::vector<std::string> out;
+
+    if (const char* bls = gSystem->Getenv("RAREXSEC_BEAMLINES")) {
+        std::string s{bls};
+        std::string tok;
+
+        auto flush = [&]() {
+            if (!tok.empty()) {
+                out.push_back(tok);
+                tok.clear();
+            }
+        };
+
+        for (char ch : s) {
+            if (ch == ',' || std::isspace(static_cast<unsigned char>(ch))) {
+                flush();
+            } else {
+                tok.push_back(ch);
+            }
+        }
+        flush();
+    }
+
+    if (out.empty()) {
+        out.push_back(env.beamline);
+    }
+
+    return out;
+}
+
 void plot_topology_variables() {
     try {
         ROOT::EnableImplicitMT();
         const auto env = rarexsec::Env::from_env();
         auto hub = env.make_hub();
-        const auto mc_samples = hub.simulation_entries(env.beamline, env.periods);
+        auto beamlines = get_beamlines(env);
+        using SamplePtr = decltype(hub.simulation_entries(env.beamline, env.periods))::value_type;
+        std::vector<SamplePtr> mc_samples;
+        for (const auto& bl : beamlines) {
+            auto sub = hub.simulation_entries(bl, env.periods);
+            mc_samples.insert(mc_samples.end(), sub.begin(), sub.end());
+        }
 
-        std::cout << "Loaded beamline " << env.beamline << " for";
+        std::cout << "Loaded beamlines";
+        for (const auto& bl : beamlines) {
+            std::cout << ' ' << bl;
+        }
+        std::cout << " for";
         for (const auto& period : env.periods) {
             std::cout << ' ' << period;
         }
