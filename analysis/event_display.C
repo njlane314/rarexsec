@@ -5,6 +5,7 @@
 #include "rarexsec/Hub.h"
 #include "rarexsec/Processor.h"
 #include "rarexsec/plot/EventDisplay.h"
+#include "rarexsec/proc/Selection.h"
 
 #include <ROOT/RDataFrame.hxx>
 #include <TError.h>
@@ -120,36 +121,10 @@ static void run_event_display(bool use_semantic, bool use_uncorrected)
 
     ROOT::RDF::RNode node = rarexsec::processor().run(df, rec);
     node = apply_mc_slice(node, rec);
-
-    if (use_semantic) {
-        if (use_uncorrected) {
-            node = node.Filter(
-                "semantic_image_uncorrected_u.size() > 0 || "
-                "semantic_image_uncorrected_v.size() > 0 || "
-                "semantic_image_uncorrected_w.size() > 0",
-                "non-empty semantic images");
-        } else {
-            node = node.Filter(
-                "semantic_image_u.size() > 0 || "
-                "semantic_image_v.size() > 0 || "
-                "semantic_image_w.size() > 0",
-                "non-empty semantic images");
-        }
-    } else {
-        if (use_uncorrected) {
-            node = node.Filter(
-                "detector_image_uncorrected_u.size() > 0 || "
-                "detector_image_uncorrected_v.size() > 0 || "
-                "detector_image_uncorrected_w.size() > 0",
-                "non-empty detector images");
-        } else {
-            node = node.Filter(
-                "detector_image_u.size() > 0 || "
-                "detector_image_v.size() > 0 || "
-                "detector_image_w.size() > 0",
-                "non-empty detector images");
-        }
-    }
+    node = rarexsec::selection::apply(
+        node,
+        rarexsec::selection::Preset::InclusiveMuCC,
+        rec);
 
     using rarexsec::plot::EventDisplay;
 
