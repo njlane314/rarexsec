@@ -68,7 +68,7 @@ void plot_topology_variables() {
 
         rarexsec::plot::Options opt;
         opt.out_dir = "plots/selection";
-        opt.use_log_y = true;
+        opt.use_log_y = false;
         opt.overlay_signal = true;
         opt.annotate_numbers = true;
         opt.image_format = "pdf";
