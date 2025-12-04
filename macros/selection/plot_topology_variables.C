@@ -103,9 +103,9 @@ void plot_topology_variables() {
         rarexsec::plot::TH1DModel num_slices = beam_pe;
         num_slices.id = "num_slices";
         num_slices.title = ";Number of Slices;Events";
-        num_slices.nbins = 10;
+        num_slices.nbins = 3;
         num_slices.xmin = -0.5;
-        num_slices.xmax = 9.5;
+        num_slices.xmax = 2.5;
 
         rarexsec::plot::TH1DModel topology_score = beam_pe;
         topology_score.id = "topological_score";
