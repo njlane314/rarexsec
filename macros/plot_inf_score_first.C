@@ -150,7 +150,7 @@ void plot_inf_score_first() {
         spec.expr = "inf_scores.empty() ? -1.0f : inf_scores[0]";
         spec.weight = "w_nominal";
         spec.nbins = 100;
-        spec.xmin = -1.0;
+        spec.xmin = -0.5;
         spec.xmax = 2.0;
         spec.sel = rarexsec::selection::Preset::InclusiveMuCC;
 
