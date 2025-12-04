@@ -23,7 +23,6 @@ inline constexpr float topology_min_contained_fraction = 0.0f;
 inline constexpr float topology_min_cluster_fraction = 0.5f;
 
 inline constexpr float muon_min_track_score = 0.5f;
-inline constexpr float muon_min_llr = 0.2f;
 inline constexpr float muon_min_track_length = 10.0f;
 inline constexpr float muon_max_track_distance = 4.0f;
 inline constexpr unsigned muon_required_generation = 2u;
@@ -71,14 +70,12 @@ inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const rarexsec::E
     case Preset::Muon:
         return node.Filter(
             [](const ROOT::RVec<float>& scores,
-               const ROOT::RVec<float>& llrs,
                const ROOT::RVec<float>& lengths,
                const ROOT::RVec<float>& distances,
                const ROOT::RVec<unsigned>& generations) {
                 const auto n = scores.size();
                 for (std::size_t i = 0; i < n; ++i) {
                     const bool passes = scores[i] > muon_min_track_score &&
-                                        llrs[i] > muon_min_llr &&
                                         lengths[i] > muon_min_track_length &&
                                         distances[i] < muon_max_track_distance &&
                                         generations[i] == muon_required_generation;
@@ -89,7 +86,6 @@ inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const rarexsec::E
                 return false;
             },
             {"track_shower_scores",
-             "trk_llr_pid_v",
              "track_length",
              "track_distance_to_vertex",
              "pfp_generations"});
