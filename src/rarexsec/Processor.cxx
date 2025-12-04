@@ -82,7 +82,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
                     return -1;
                 }
             },
-            {"interaction_mode"});
+            {"int_mode"});
 
         node = node.Define(
             "analysis_channels",
