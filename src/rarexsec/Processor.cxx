@@ -50,7 +50,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
             [](float x, float y, float z) {
                 return rarexsec::fiducial::is_in_truth_volume(x, y, z);
             },
-            {"nu_vx", "nu_vy", "nu_vz"});
+            {"nu_vtx_x", "nu_vtx_y", "nu_vtx_z"});
 
         node = node.Define(
             "count_strange",
