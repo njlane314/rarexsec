@@ -4,6 +4,7 @@
 
 #include <rarexsec/proc/Env.h>
 #include <rarexsec/Hub.h>
+#include <rarexsec/plot/Channels.h>
 #include <rarexsec/plot/Plotter.h>
 
 #include <cctype>
@@ -131,14 +132,16 @@ void plot_inf_score_first() {
         std::cout << "Total triggers (equivalent): " << total_trig_eqv << std::endl;
 
         rarexsec::plot::Options opt;
-        opt.out_dir = "plots_inf_score";
-        opt.image_format = "png";
-        opt.show_ratio = false;
-        opt.show_ratio_band = false;
-        opt.y_title = "Events";
-        opt.x_title = "First inference score";
+        opt.out_dir = "plots/selection";
+        opt.use_log_y = true;
+        opt.overlay_signal = true;
+        opt.annotate_numbers = true;
+        opt.image_format = "pdf";
+        opt.legend_on_top = true;
         opt.beamline = env.beamline;
         opt.periods = env.periods;
+        opt.analysis_region_label = "Empty Selection";
+        opt.signal_channels = rarexsec::plot::Channels::signal_keys();
 
         rarexsec::plot::TH1DModel spec;
         spec.id = "inf_score_first";
