@@ -8,8 +8,12 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -94,6 +98,66 @@ static std::vector<std::string> intersect_cols(ROOT::RDF::RNode node, const std:
     return out;
 }
 
+static constexpr std::size_t kTrainingNSignal = 50000;
+static constexpr std::size_t kTrainingNBackground = 50000;
+static constexpr std::uint64_t kTrainingSeed = 12345u;
+
+struct TrainCandidate {
+    std::uint64_t event_key;
+    double key;
+};
+
+static std::uint64_t make_event_key(int run, int sub, int evt) {
+    const std::uint64_t r = static_cast<std::uint64_t>(static_cast<std::uint32_t>(run));
+    const std::uint64_t s = static_cast<std::uint64_t>(static_cast<std::uint32_t>(sub));
+    const std::uint64_t e = static_cast<std::uint64_t>(static_cast<std::uint32_t>(evt));
+    return (r << 42) ^ (s << 21) ^ e;
+}
+
+static double stable_uniform(int run, int sub, int evt) {
+    std::uint64_t key = make_event_key(run, sub, evt) ^ kTrainingSeed;
+    std::uint64_t h = std::hash<std::uint64_t>{}(key);
+    const double inv = 1.0 / static_cast<double>(std::numeric_limits<std::uint64_t>::max());
+    return (static_cast<double>(h) + 0.5) * inv;
+}
+
+static std::unordered_set<std::uint64_t> select_top_ids(std::vector<TrainCandidate>& cands, std::size_t n) {
+    std::unordered_set<std::uint64_t> out;
+    if (n == 0 || cands.empty())
+        return out;
+    if (cands.size() <= n) {
+        out.reserve(cands.size());
+        for (const auto& c : cands)
+            out.insert(c.event_key);
+        return out;
+    }
+    auto nth = cands.end() - static_cast<std::vector<TrainCandidate>::difference_type>(n);
+    std::nth_element(cands.begin(), nth, cands.end(),
+                     [](const TrainCandidate& a, const TrainCandidate& b) {
+                         return a.key < b.key;
+                     });
+    double cutoff = nth->key;
+    out.reserve(n);
+    std::size_t count = 0;
+    for (const auto& c : cands) {
+        if (c.key > cutoff) {
+            if (out.insert(c.event_key).second)
+                ++count;
+        }
+    }
+    if (count < n) {
+        for (const auto& c : cands) {
+            if (c.key == cutoff) {
+                if (out.insert(c.event_key).second)
+                    ++count;
+                if (count == n)
+                    break;
+            }
+        }
+    }
+    return out;
+}
+
 void snapshot_numu_selection() {
     try {
         ROOT::EnableThreadSafety();
@@ -164,6 +228,57 @@ void snapshot_numu_selection() {
         std::cout << "[snapshot] applying numu selection preset to " << samples.size()
                   << " simulation sample(s).\n";
 
+        std::vector<TrainCandidate> signal_candidates;
+        std::vector<TrainCandidate> background_candidates;
+
+        for (const auto* entry : samples) {
+            if (!entry)
+                continue;
+
+            auto base = rarexsec::selection::apply(entry->rnode(), preset, *entry)
+                            .Define("event_key", make_event_key, {"run", "sub", "evt"})
+                            .Define("valid_weight",
+                                    [](float w) { return std::isfinite(w) && w > 0.0f; },
+                                    {"w_nominal"})
+                            .Filter("valid_weight")
+                            .Define("u_rand", stable_uniform, {"run", "sub", "evt"})
+                            .Define("es_key",
+                                    [](double u, float w) { return std::log(u) / static_cast<double>(w); },
+                                    {"u_rand", "w_nominal"});
+
+            auto sig_df = base.Filter("is_signal");
+            auto bkg_df = base.Filter("!is_signal");
+
+            auto sig_keys = sig_df.Take<std::uint64_t>("event_key");
+            auto sig_es = sig_df.Take<double>("es_key");
+
+            auto bkg_keys = bkg_df.Take<std::uint64_t>("event_key");
+            auto bkg_es = bkg_df.Take<double>("es_key");
+
+            signal_candidates.reserve(signal_candidates.size() + sig_keys->size());
+            for (std::size_t i = 0; i < sig_keys->size(); ++i) {
+                signal_candidates.push_back(TrainCandidate{(*sig_keys)[i], (*sig_es)[i]});
+            }
+
+            background_candidates.reserve(background_candidates.size() + bkg_keys->size());
+            for (std::size_t i = 0; i < bkg_keys->size(); ++i) {
+                background_candidates.push_back(TrainCandidate{(*bkg_keys)[i], (*bkg_es)[i]});
+            }
+        }
+
+        auto signal_ids = select_top_ids(signal_candidates, kTrainingNSignal);
+        auto background_ids = select_top_ids(background_candidates, kTrainingNBackground);
+
+        auto make_training_key = [](int run, int sub, int evt) {
+            return make_event_key(run, sub, evt);
+        };
+
+        auto filter_training = [&](std::uint64_t key, bool is_signal) {
+            if (is_signal)
+                return signal_ids.find(key) != signal_ids.end();
+            return background_ids.find(key) != background_ids.end();
+        };
+
         std::size_t sample_index = 0;
         for (const auto* entry : samples) {
             ++sample_index;
@@ -175,7 +290,8 @@ void snapshot_numu_selection() {
                       << tree_name << "' with " << entry->detvars.size() << " detvar variation(s).\n";
 
             auto selected = rarexsec::selection::apply(entry->rnode(), preset, *entry)
-                                .Filter("is_training");
+                                .Define("training_event_key", make_training_key, {"run", "sub", "evt"})
+                                .Filter(filter_training, {"training_event_key", "is_signal"});
             snapshot_once(selected, tree_name);
 
             for (const auto& kv : entry->detvars) {
@@ -185,7 +301,8 @@ void snapshot_numu_selection() {
                 std::cout << "[snapshot]      detvar '" << tag << "'\n";
 
                 auto dv_selected = rarexsec::selection::apply(dv.rnode(), preset, *entry)
-                                       .Filter("is_training");
+                                       .Define("training_event_key", make_training_key, {"run", "sub", "evt"})
+                                       .Filter(filter_training, {"training_event_key", "is_signal"});
                 snapshot_once(dv_selected, make_tree_name(*entry, tag));
             }
         }
