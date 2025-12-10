@@ -141,9 +141,6 @@ void snapshot_numu_selection() {
             "event_detector_image_u",
             "event_detector_image_v",
             "event_detector_image_w",
-            "semantic_image_u",
-            "semantic_image_v",
-            "semantic_image_w",
         };
 
         bool fileExists = std::filesystem::exists(outfile);
