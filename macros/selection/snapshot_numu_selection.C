@@ -140,6 +140,7 @@ void snapshot_numu_selection() {
             "sub",
             "evt",
             "w_nominal",
+            "is_signal",
             "analysis_channels",
             "detector_image_u",
             "detector_image_v",
@@ -199,4 +200,3 @@ void snapshot_numu_selection() {
         std::cerr << "Error: " << ex.what() << "\n";
     }
 }
-
