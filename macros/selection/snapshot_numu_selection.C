@@ -138,9 +138,9 @@ void snapshot_numu_selection() {
             "event",
             "w_nominal",
             "analysis_channels",
-            "event_detector_image_u",
-            "event_detector_image_v",
-            "event_detector_image_w",
+            "detector_image_u",
+            "detector_image_v",
+            "detector_image_w",
         };
 
         bool fileExists = std::filesystem::exists(outfile);
