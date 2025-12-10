@@ -128,6 +128,9 @@ void snapshot_numu_selection() {
         }
         outfile += ".root";
 
+        if (std::filesystem::exists(outfile))
+            std::filesystem::remove(outfile);
+
         ROOT::RDF::RSnapshotOptions sopt;
         sopt.fOverwriteIfExists = true;
         sopt.fLazy = false;
@@ -143,7 +146,7 @@ void snapshot_numu_selection() {
             "detector_image_w",
         };
 
-        bool fileExists = std::filesystem::exists(outfile);
+        bool fileExists = false;
         auto snapshot_once = [&](ROOT::RDF::RNode node, const std::string& treeName) mutable {
             const auto cols = intersect_cols(node, columns);
             if (cols.empty()) {
