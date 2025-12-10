@@ -134,8 +134,8 @@ void snapshot_numu_selection() {
 
         const std::vector<std::string> columns{
             "run",
-            "subrun",
-            "event",
+            "sub",
+            "evt",
             "w_nominal",
             "analysis_channels",
             "detector_image_u",
