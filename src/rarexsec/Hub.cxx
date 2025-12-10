@@ -7,9 +7,10 @@
 #include <cmath>
 #include <cstdint>
 #include <fstream>
+#include <functional>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <mutex>
-#include <random>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
@@ -23,7 +24,7 @@ namespace {
 
 constexpr std::size_t kTrainingNSignal = 50000;
 constexpr std::size_t kTrainingNBackground = 50000;
-constexpr std::uint32_t kTrainingSeed = 12345u;
+constexpr std::uint64_t kTrainingSeed = 12345u;
 
 struct TrainCandidate {
     std::uint64_t event_key = 0;
@@ -46,16 +47,9 @@ std::uint64_t make_event_key(int run, int sub, int evt)
 
 double stable_uniform(std::uint64_t key)
 {
-    std::seed_seq seed{
-        kTrainingSeed,
-        static_cast<std::uint32_t>(key),
-        static_cast<std::uint32_t>(key >> 32)
-    };
-
-    std::mt19937_64 gen(seed);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-
-    return dist(gen);
+    const std::uint64_t h = std::hash<std::uint64_t>{}(key ^ kTrainingSeed);
+    const double inv = 1.0 / static_cast<double>(std::numeric_limits<std::uint64_t>::max());
+    return (static_cast<double>(h) + 0.5) * inv;
 }
 
 TrainSelection select_top(std::vector<TrainCandidate>& cands, std::size_t n)
