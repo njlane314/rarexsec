@@ -120,8 +120,13 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
 
         node = node.Define(
             "is_signal",
-            [](int ch) { return ch == static_cast<int>(Channel::CCS1) || ch == static_cast<int>(Channel::CCSgt1); },
-            {"analysis_channels"});
+            [](bool is_nu_mu_cc, const ROOT::RVec<int>& lambda_decay_in_fid) {
+                if (!is_nu_mu_cc) return false;
+                for (auto v : lambda_decay_in_fid)
+                    if (v) return true;
+                return false;
+            },
+            {"is_nu_mu_cc", "lambda_decay_in_fid"});
 
         node = node.Define(
             "recognised_signal",
