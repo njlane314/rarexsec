@@ -6,10 +6,33 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <cstdint>
+#include <functional>
+#include <limits>
 
 namespace {
 constexpr double kRecognisedPurityMin = 0.5;
 constexpr double kRecognisedCompletenessMin = 0.1;
+
+constexpr std::uint64_t kTrainingSeed = 12345u;
+constexpr double kTrainingFracSignal = 0.05;
+constexpr double kTrainingFracBackground = 0.01;
+
+std::uint64_t make_event_key(int run, int sub, int evt)
+{
+    const std::uint64_t r = static_cast<std::uint64_t>(static_cast<std::uint32_t>(run));
+    const std::uint64_t s = static_cast<std::uint64_t>(static_cast<std::uint32_t>(sub));
+    const std::uint64_t e = static_cast<std::uint64_t>(static_cast<std::uint32_t>(evt));
+    return (r << 42) ^ (s << 21) ^ e;
+}
+
+double stable_uniform(int run, int sub, int evt)
+{
+    std::uint64_t key = make_event_key(run, sub, evt) ^ kTrainingSeed;
+    std::uint64_t h = std::hash<std::uint64_t>{}(key);
+    const double inv = 1.0 / static_cast<double>(std::numeric_limits<std::uint64_t>::max());
+    return (static_cast<double>(h) + 0.5) * inv;
+}
 }
 
 //____________________________________________________________________________
@@ -153,6 +176,43 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
             return rarexsec::fiducial::is_in_reco_volume(x, y, z);
         },
         {"reco_neutrino_vertex_sce_x", "reco_neutrino_vertex_sce_y", "reco_neutrino_vertex_sce_z"});
+
+    if (is_mc) {
+        node = node.Define(
+            "is_training",
+            [](int run, int sub, int evt, bool is_signal, float w_nominal) {
+                if (!std::isfinite(w_nominal) || w_nominal <= 0.0f)
+                    return false;
+                const double u = stable_uniform(run, sub, evt);
+                if (!(u > 0.0 && u < 1.0))
+                    return false;
+                const double p = is_signal ? kTrainingFracSignal : kTrainingFracBackground;
+                return u < p;
+            },
+            {"run", "sub", "evt", "is_signal", "w_nominal"});
+
+        node = node.Define(
+            "w_analysis",
+            [](float w_nominal, bool is_signal, bool is_training) {
+                if (!std::isfinite(w_nominal) || w_nominal <= 0.0f)
+                    return 0.0f;
+                if (is_training)
+                    return 0.0f;
+                const double p = is_signal ? kTrainingFracSignal : kTrainingFracBackground;
+                const double scale = 1.0 / (1.0 - p);
+                const double w = static_cast<double>(w_nominal) * scale;
+                if (!std::isfinite(w) || w <= 0.0)
+                    return 0.0f;
+                return static_cast<float>(w);
+            },
+            {"w_nominal", "is_signal", "is_training"});
+    } else {
+        node = node.Define("is_training", [] { return false; });
+        node = node.Define(
+            "w_analysis",
+            [](float w_nominal) { return w_nominal; },
+            {"w_nominal"});
+    }
 
     return node;
 }
