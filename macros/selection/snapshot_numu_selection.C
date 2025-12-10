@@ -165,13 +165,15 @@ void snapshot_numu_selection() {
             if (!entry)
                 continue;
 
-            auto selected = rarexsec::selection::apply(entry->rnode(), preset, *entry);
+            auto selected = rarexsec::selection::apply(entry->rnode(), preset, *entry)
+                                .Filter("is_training");
             snapshot_once(selected, make_tree_name(*entry, ""));
 
             for (const auto& kv : entry->detvars) {
                 const auto& tag = kv.first;
                 const auto& dv = kv.second;
-                auto dv_selected = rarexsec::selection::apply(dv.rnode(), preset, *entry);
+                auto dv_selected = rarexsec::selection::apply(dv.rnode(), preset, *entry)
+                                       .Filter("is_training");
                 snapshot_once(dv_selected, make_tree_name(*entry, tag));
             }
         }
