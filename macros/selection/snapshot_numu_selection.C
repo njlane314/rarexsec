@@ -164,17 +164,26 @@ void snapshot_numu_selection() {
         std::cout << "[snapshot] applying numu selection preset to " << samples.size()
                   << " simulation sample(s).\n";
 
+        std::size_t sample_index = 0;
         for (const auto* entry : samples) {
+            ++sample_index;
             if (!entry)
                 continue;
 
+            const auto tree_name = make_tree_name(*entry, "");
+            std::cout << "[snapshot] [" << sample_index << "/" << samples.size() << "] processing sample '"
+                      << tree_name << "' with " << entry->detvars.size() << " detvar variation(s).\n";
+
             auto selected = rarexsec::selection::apply(entry->rnode(), preset, *entry)
                                 .Filter("is_training");
-            snapshot_once(selected, make_tree_name(*entry, ""));
+            snapshot_once(selected, tree_name);
 
             for (const auto& kv : entry->detvars) {
                 const auto& tag = kv.first;
                 const auto& dv = kv.second;
+
+                std::cout << "[snapshot]      detvar '" << tag << "'\n";
+
                 auto dv_selected = rarexsec::selection::apply(dv.rnode(), preset, *entry)
                                        .Filter("is_training");
                 snapshot_once(dv_selected, make_tree_name(*entry, tag));
