@@ -109,10 +109,11 @@ void snapshot_numu_selection() {
             if (!entry)
                 continue;
 
-            auto node = rarexsec::selection::apply(entry->rnode(), preset, *entry);
+            auto node = entry->rnode();
             if (!has_column(node, "is_training"))
                 throw std::runtime_error("missing required column: is_training");
             node = node.Filter([](bool t) { return t; }, {"is_training"});
+            node = rarexsec::selection::apply(node, preset, *entry);
 
             const auto cols = rarexsec::snapshot::intersect_cols(node, opt.columns);
             if (cols.empty())
