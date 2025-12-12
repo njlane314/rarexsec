@@ -3,6 +3,7 @@
 #include <TSystem.h>
 
 #include <rarexsec/Hub.h>
+#include <rarexsec/Snapshot.h>
 #include <rarexsec/proc/Env.h>
 #include <rarexsec/proc/Selection.h>
 
@@ -39,59 +40,15 @@ static std::vector<std::string> get_beamlines(const rarexsec::Env& env) {
         flush();
     }
 
-    if (out.empty()) {
+    if (out.empty())
         out.push_back(env.beamline);
-    }
 
     return out;
 }
 
-static std::string sample_label(const rarexsec::Entry& e) {
-    using rarexsec::sample::origin;
-    switch (e.kind) {
-    case origin::data:
-        return "data";
-    case origin::ext:
-        return "ext";
-    case origin::dirt:
-        return "dirt";
-    case origin::strangeness:
-        return "strangeness";
-    case origin::beam:
-    case origin::unknown:
-    default:
-        return "beam";
-    }
-}
-
-static std::string sanitise(std::string s) {
-    for (char& c : s) {
-        if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.'))
-            c = '_';
-    }
-    return s;
-}
-
-static std::string make_tree_name(const rarexsec::Entry& e, const std::string& detvar) {
-    std::string name = sanitise(e.beamline) + "_" + sanitise(e.period) + "_" + sanitise(sample_label(e));
-    if (!detvar.empty()) {
-        name += "__" + sanitise(detvar);
-    }
-    return name;
-}
-
-static std::vector<std::string> intersect_cols(ROOT::RDF::RNode node, const std::vector<std::string>& wanted) {
-    auto have = node.GetColumnNames();
-    std::unordered_set<std::string> avail(have.begin(), have.end());
-
-    std::vector<std::string> out;
-    out.reserve(wanted.size());
-    for (const auto& c : wanted) {
-        if (avail.count(c)) {
-            out.push_back(c);
-        }
-    }
-    return out;
+static bool has_column(ROOT::RDF::RNode node, const std::string& name) {
+    const auto cols = node.GetColumnNames();
+    return std::find(cols.begin(), cols.end(), name) != cols.end();
 }
 
 void snapshot_numu_selection() {
@@ -101,10 +58,9 @@ void snapshot_numu_selection() {
 
         const auto env = rarexsec::Env::from_env();
         auto hub = env.make_hub();
-        auto beamlines = get_beamlines(env);
+        const auto beamlines = get_beamlines(env);
 
-        using SamplePtr = decltype(hub.simulation_entries(env.beamline, env.periods))::value_type;
-        std::vector<SamplePtr> samples;
+        std::vector<const rarexsec::Entry*> samples;
         for (const auto& bl : beamlines) {
             auto sub = hub.simulation_entries(bl, env.periods);
             samples.insert(samples.end(), sub.begin(), sub.end());
@@ -115,27 +71,20 @@ void snapshot_numu_selection() {
             return;
         }
 
-        std::filesystem::create_directories("snapshots");
-        std::string outfile = "snapshots/numu_selection";
+        rarexsec::snapshot::Options opt;
+        opt.outdir = "snapshots";
+        opt.tree = "analysis";
+        opt.outfile = "numu_selection";
         if (!beamlines.empty()) {
-            outfile += "_" + beamlines.front();
-            for (std::size_t i = 1; i < beamlines.size(); ++i) {
-                outfile += "-" + beamlines[i];
-            }
+            opt.outfile += "_" + beamlines.front();
+            for (std::size_t i = 1; i < beamlines.size(); ++i)
+                opt.outfile += "-" + beamlines[i];
         }
-        for (const auto& period : env.periods) {
-            outfile += "_" + period;
-        }
-        outfile += ".root";
+        for (const auto& period : env.periods)
+            opt.outfile += "_" + period;
+        opt.outfile += ".root";
 
-        if (std::filesystem::exists(outfile))
-            std::filesystem::remove(outfile);
-
-        ROOT::RDF::RSnapshotOptions sopt;
-        sopt.fOverwriteIfExists = true;
-        sopt.fLazy = false;
-
-        const std::vector<std::string> columns{
+        opt.columns = {
             "run",
             "sub",
             "evt",
@@ -147,52 +96,39 @@ void snapshot_numu_selection() {
             "detector_image_w",
         };
 
-        bool fileExists = false;
-        auto snapshot_once = [&](ROOT::RDF::RNode node, const std::string& treeName) mutable {
-            const auto cols = intersect_cols(node, columns);
-            if (cols.empty()) {
-                std::cout << "[snapshot] skipping tree '" << treeName
-                          << "' because none of the requested columns are available.\n";
-                return;
-            }
-
-            sopt.fMode = fileExists ? "UPDATE" : "RECREATE";
-            node.Snapshot("analysis", outfile, cols, sopt).GetValue();
-            fileExists = true;
-        };
+        std::filesystem::create_directories(opt.outdir);
+        const std::string outFile = (std::filesystem::path(opt.outdir) / opt.outfile).string();
+        if (std::filesystem::exists(outFile))
+            std::filesystem::remove(outFile);
 
         const auto preset = rarexsec::selection::Preset::InclusiveMuCC;
-        std::cout << "[snapshot] applying numu selection preset to " << samples.size()
-                  << " simulation sample(s).\n";
 
-        std::size_t sample_index = 0;
+        bool fileExists = false;
+
         for (const auto* entry : samples) {
-            ++sample_index;
             if (!entry)
                 continue;
 
-            const auto tree_name = make_tree_name(*entry, "");
-            std::cout << "[snapshot] [" << sample_index << "/" << samples.size() << "] processing sample '"
-                      << tree_name << "' with " << entry->detvars.size() << " detvar variation(s).\n";
+            auto node = rarexsec::selection::apply(entry->rnode(), preset, *entry);
+            if (has_column(node, "is_training"))
+                node = node.Filter([](bool t) { return t; }, {"is_training"});
 
-            auto selected = rarexsec::selection::apply(entry->rnode(), preset, *entry)
-                                .Filter("is_training");
-            snapshot_once(selected, tree_name);
+            const auto cols = rarexsec::snapshot::intersect_cols(node, opt.columns);
+            if (cols.empty())
+                continue;
 
-            for (const auto& kv : entry->detvars) {
-                const auto& tag = kv.first;
-                const auto& dv = kv.second;
+            ROOT::RDF::RSnapshotOptions sopt;
+            sopt.fMode = fileExists ? "UPDATE" : "RECREATE";
+            sopt.fOverwriteIfExists = true;
+            sopt.fLazy = false;
 
-                std::cout << "[snapshot]      detvar '" << tag << "'\n";
-
-                auto dv_selected = rarexsec::selection::apply(dv.rnode(), preset, *entry)
-                                       .Filter("is_training");
-                snapshot_once(dv_selected, make_tree_name(*entry, tag));
-            }
+            const auto treeName = rarexsec::snapshot::make_tree_name(opt, *entry, "");
+            node.Snapshot(treeName, outFile, cols, sopt).GetValue();
+            fileExists = true;
         }
 
         if (fileExists) {
-            std::cout << "[snapshot] wrote selection snapshots to " << outfile << "\n";
+            std::cout << "[snapshot] wrote selection snapshots to " << outFile << "\n";
         } else {
             std::cout << "[snapshot] no snapshots were written.\n";
         }
