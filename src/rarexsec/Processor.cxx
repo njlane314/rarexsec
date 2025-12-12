@@ -81,15 +81,15 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
         };
 
         const std::string col_run = has("run") ? "run" : "";
-        const std::string col_sub = has("sub") ? "sub" : (has("subrun") ? "subrun" : "");
-        const std::string col_evt = has("evt") ? "evt" : (has("event") ? "event" : "");
+        const std::string col_sub = has("sub") ? "sub" : "";
+        const std::string col_evt = has("evt") ? "evt" : "";
         const bool have_rse = !col_run.empty() && !col_sub.empty() && !col_evt.empty();
 
         if (!has("ml_u")) {
             if (have_rse) {
                 node = node.Define(
                     "ml_u",
-                    [](int run, int sub, auto evt) {
+                    [](int run, int sub, int evt) {
                         const auto h = training_hash(static_cast<std::uint32_t>(run),
                                                      static_cast<std::uint32_t>(sub),
                                                      static_cast<std::uint64_t>(evt));
