@@ -89,7 +89,7 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
             if (have_rse) {
                 node = node.Define(
                     "ml_u",
-                    [](unsigned int run, unsigned int sub, unsigned long long evt) {
+                    [](int run, int sub, long long evt) {
                         const auto h = training_hash(static_cast<std::uint32_t>(run),
                                                      static_cast<std::uint32_t>(sub),
                                                      static_cast<std::uint64_t>(evt));
