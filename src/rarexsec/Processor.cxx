@@ -3,13 +3,41 @@
 #include "rarexsec/proc/Volume.h"
 
 #include <ROOT/RVec.hxx>
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 
 namespace {
 constexpr double kRecognisedPurityMin = 0.5;
 constexpr double kRecognisedCompletenessMin = 0.1;
+
+constexpr float kTrainingFraction = 0.10f;
+constexpr bool kTrainingIncludeExt = true;
+constexpr std::uint64_t kTrainingSalt = 0xD1B54A32D192ED03ULL;
+
+inline std::uint64_t splitmix64(std::uint64_t x) noexcept
+{
+    x += 0x9e3779b97f4a7c15ULL;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+    return x ^ (x >> 31);
+}
+
+inline std::uint64_t training_hash(std::uint32_t run, std::uint32_t subrun, std::uint64_t event) noexcept
+{
+    std::uint64_t key = (std::uint64_t(run) << 32) ^ std::uint64_t(subrun);
+    key ^= (event + kTrainingSalt);
+    return splitmix64(key);
+}
+
+inline float u01_from_hash(std::uint64_t h) noexcept
+{
+    constexpr std::uint64_t denom = (1ULL << 24);
+    const std::uint64_t x = (h >> 40) & (denom - 1ULL);
+    return static_cast<float>(x) * (1.0f / static_cast<float>(denom));
+}
 }
 
 //____________________________________________________________________________
@@ -42,6 +70,66 @@ ROOT::RDF::RNode rarexsec::Processor::run(ROOT::RDF::RNode node,
             {"w_base", "weightSpline", "weightTune"});
     } else {
         node = node.Define("w_nominal", [](float w) { return w; }, {"w_base"});
+    }
+
+    {
+        const bool trainable = is_mc || (is_ext && kTrainingIncludeExt);
+
+        const auto cnames = node.GetColumnNames();
+        auto has = [&](const std::string& name) {
+            return std::find(cnames.begin(), cnames.end(), name) != cnames.end();
+        };
+
+        const std::string col_run = has("run") ? "run" : "";
+        const std::string col_sub = has("sub") ? "sub" : (has("subrun") ? "subrun" : "");
+        const std::string col_evt = has("evt") ? "evt" : (has("event") ? "event" : "");
+        const bool have_rse = !col_run.empty() && !col_sub.empty() && !col_evt.empty();
+
+        if (!has("ml_u")) {
+            if (have_rse) {
+                node = node.Define(
+                    "ml_u",
+                    [](unsigned int run, unsigned int sub, unsigned long long evt) {
+                        const auto h = training_hash(static_cast<std::uint32_t>(run),
+                                                     static_cast<std::uint32_t>(sub),
+                                                     static_cast<std::uint64_t>(evt));
+                        return u01_from_hash(h);
+                    },
+                    {col_run, col_sub, col_evt});
+            } else {
+                node = node.Define("ml_u", [] { return 0.0f; });
+            }
+        }
+
+        if (!has("is_training")) {
+            node = node.Define(
+                "is_training",
+                [trainable, have_rse](float u) {
+                    if (!trainable || !have_rse) return false;
+                    return u < kTrainingFraction;
+                },
+                {"ml_u"});
+        }
+
+        if (!has("is_template")) {
+            node = node.Define(
+                "is_template",
+                [trainable](bool t) { return !trainable || !t; },
+                {"is_training"});
+        }
+
+        if (!has("w_template")) {
+            node = node.Define(
+                "w_template",
+                [trainable, have_rse](float w, bool t) {
+                    if (!trainable || !have_rse) return w;
+                    if (t) return 0.0f;
+                    const float keep = 1.0f - kTrainingFraction;
+                    if (keep <= 0.0f) return 0.0f;
+                    return w / keep;
+                },
+                {"w_nominal", "is_training"});
+        }
     }
 
     if (is_mc) {

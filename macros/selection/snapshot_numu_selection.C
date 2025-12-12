@@ -74,7 +74,7 @@ void snapshot_numu_selection() {
         rarexsec::snapshot::Options opt;
         opt.outdir = "snapshots";
         opt.tree = "analysis";
-        opt.outfile = "numu_selection";
+        opt.outfile = "numu_selection_train";
         if (!beamlines.empty()) {
             opt.outfile += "_" + beamlines.front();
             for (std::size_t i = 1; i < beamlines.size(); ++i)
@@ -110,8 +110,9 @@ void snapshot_numu_selection() {
                 continue;
 
             auto node = rarexsec::selection::apply(entry->rnode(), preset, *entry);
-            if (has_column(node, "is_training"))
-                node = node.Filter([](bool t) { return t; }, {"is_training"});
+            if (!has_column(node, "is_training"))
+                throw std::runtime_error("missing required column: is_training");
+            node = node.Filter([](bool t) { return t; }, {"is_training"});
 
             const auto cols = rarexsec::snapshot::intersect_cols(node, opt.columns);
             if (cols.empty())
@@ -122,8 +123,7 @@ void snapshot_numu_selection() {
             sopt.fOverwriteIfExists = true;
             sopt.fLazy = false;
 
-            const auto treeName = rarexsec::snapshot::make_tree_name(opt, *entry, "");
-            node.Snapshot(treeName, outFile, cols, sopt).GetValue();
+            node.Snapshot(opt.tree, outFile, cols, sopt).GetValue();
             fileExists = true;
         }
 
