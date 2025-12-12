@@ -37,7 +37,7 @@ enum class Preset {
     InclusiveMuCC
 };
 
-inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const rarexsec::Entry& rec) {
+inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const Entry& rec) {
     switch (p) {
     case Preset::Empty:
         return node;
@@ -109,12 +109,12 @@ struct EvalResult {
 };
 
 template <class SignalPredicate>
-inline EvalResult evaluate(const std::vector<const rarexsec::Entry*>& mc,
+inline EvalResult evaluate(const std::vector<const Entry*>& mc,
                            const SignalPredicate& is_signal_truth,
                            Preset final_selection) {
     auto sumw = [](ROOT::RDF::RNode n){ auto r = n.Sum<float>("w_nominal"); return double(r.GetValue()); };
     EvalResult out;
-    for (const rarexsec::Entry* rec : mc) {
+    for (const Entry* rec : mc) {
         ROOT::RDF::RNode base = rec->nominal.rnode();
         auto denom = base.Filter([&](int ch){ return is_signal_truth(ch); }, {"analysis_channels"});
         out.denom += sumw(denom);
