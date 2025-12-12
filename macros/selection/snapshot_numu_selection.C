@@ -84,6 +84,11 @@ void snapshot_numu_selection() {
             opt.outfile += "_" + period;
         opt.outfile += ".root";
 
+        opt.outdir =
+            (std::filesystem::path(opt.outdir) /
+             rarexsec::snapshot::sanitise(std::filesystem::path(opt.outfile).stem().string()))
+                .string();
+
         opt.columns = {
             "run",
             "sub",
@@ -97,13 +102,10 @@ void snapshot_numu_selection() {
         };
 
         std::filesystem::create_directories(opt.outdir);
-        const std::string outFile = (std::filesystem::path(opt.outdir) / opt.outfile).string();
-        if (std::filesystem::exists(outFile))
-            std::filesystem::remove(outFile);
 
         const auto preset = rarexsec::selection::Preset::InclusiveMuCC;
 
-        bool fileExists = false;
+        std::size_t nWritten = 0;
 
         for (const auto* entry : samples) {
             if (!entry)
@@ -120,16 +122,18 @@ void snapshot_numu_selection() {
                 continue;
 
             ROOT::RDF::RSnapshotOptions sopt;
-            sopt.fMode = fileExists ? "UPDATE" : "RECREATE";
+            sopt.fMode = "RECREATE";
             sopt.fOverwriteIfExists = true;
             sopt.fLazy = false;
 
+            const std::string outFile = rarexsec::snapshot::make_out_path(opt, *entry, "");
             node.Snapshot(opt.tree, outFile, cols, sopt).GetValue();
-            fileExists = true;
+            ++nWritten;
         }
 
-        if (fileExists) {
-            std::cout << "[snapshot] wrote selection snapshots to " << outFile << "\n";
+        if (nWritten) {
+            std::cout << "[snapshot] wrote " << nWritten
+                      << " selection snapshot file(s) under " << opt.outdir << "\n";
         } else {
             std::cout << "[snapshot] no snapshots were written.\n";
         }
