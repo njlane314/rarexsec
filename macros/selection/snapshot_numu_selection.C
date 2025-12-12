@@ -3,7 +3,7 @@
 #include <TSystem.h>
 
 #include <rarexsec/Hub.h>
-#include <rarexsec/Snapshot.h>
+#include <rarexsec/proc/Snapshot.h>
 #include <rarexsec/proc/Env.h>
 #include <rarexsec/proc/Selection.h>
 
