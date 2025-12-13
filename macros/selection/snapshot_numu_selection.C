@@ -102,10 +102,15 @@ void snapshot_numu_selection() {
         };
 
         std::filesystem::create_directories(opt.outdir);
+        const std::string outFile = rarexsec::snapshot::make_out_file(opt);
+        if (std::filesystem::exists(outFile))
+            std::filesystem::remove(outFile);
 
         const auto preset = rarexsec::selection::Preset::InclusiveMuCC;
 
         std::size_t nWritten = 0;
+        std::size_t sampleIndex = 0;
+        bool fileExists = false;
 
         for (const auto* entry : samples) {
             if (!entry)
@@ -122,18 +127,27 @@ void snapshot_numu_selection() {
                 continue;
 
             ROOT::RDF::RSnapshotOptions sopt;
-            sopt.fMode = "RECREATE";
-            sopt.fOverwriteIfExists = true;
+            sopt.fMode = fileExists ? "UPDATE" : "RECREATE";
+            sopt.fOverwriteIfExists = false;
             sopt.fLazy = false;
 
-            const std::string outFile = rarexsec::snapshot::make_out_path(opt, *entry, "");
-            node.Snapshot(opt.tree, outFile, cols, sopt).GetValue();
+            std::string treeName =
+                rarexsec::snapshot::sanitise(opt.tree) + "_" +
+                rarexsec::snapshot::sanitise(entry->beamline) + "_" +
+                rarexsec::snapshot::sanitise(entry->period) + "_" +
+                rarexsec::snapshot::sanitise(rarexsec::snapshot::sample_label(*entry));
+            if (!entry->files.empty())
+                treeName += "__" + rarexsec::snapshot::sanitise(std::filesystem::path(entry->files.front()).filename().string());
+            treeName += "__" + std::to_string(sampleIndex++);
+
+            node.Snapshot(treeName, outFile, cols, sopt).GetValue();
+            fileExists = true;
             ++nWritten;
         }
 
         if (nWritten) {
             std::cout << "[snapshot] wrote " << nWritten
-                      << " selection snapshot file(s) under " << opt.outdir << "\n";
+                      << " selection snapshot tree(s) to " << outFile << "\n";
         } else {
             std::cout << "[snapshot] no snapshots were written.\n";
         }
